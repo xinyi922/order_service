@@ -1,34 +1,53 @@
-name: CI
+name: Java CI
 
+# 触发条件
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - master
 
+# 定义作业
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: orders
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+  build:
+    runs-on: ubuntu-latest   # 在 Ubuntu 最新环境跑
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK
+      # 1️⃣ 拉取代码
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ 设置 Java
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
-      - name: Build and Run Tests
-        run: mvn clean test
+          distribution: temurin
+          java-version: 17
+
+      # 3️⃣ 缓存 Maven 依赖，加快 CI
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      # 4️⃣ 构建项目
+      - name: Build with Maven
+        run: mvn clean compile
+
+      # 5️⃣ 运行测试
+      - name: Run tests
+        run: mvn test
+
+      # 6️⃣ 可选：生成测试报告
+      - name: Archive test reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports
+          path: target/surefire-reports/
