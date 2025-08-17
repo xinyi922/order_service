@@ -23,6 +23,6 @@ class OrderServiceTest {
 
         Order order = service.createOrder(dto1);
         assertNotNull(order.getOrderId());
-        assertEquals("CREATED", order.getStatus());
+        assertEquals("NEW", order.getStatus());
     }
 }
